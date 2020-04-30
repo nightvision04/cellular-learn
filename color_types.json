@@ -1,0 +1,106 @@
+{
+  "0": {"color": "white",
+        "value": [255,255,255],
+        "immutable": false,
+        "type":"cellular_automata"},
+
+  "1": {"color": "red",
+        "value": [255,0,0],
+        "immutable": false,
+        "type":"class_reserved"},
+
+  "2": {"color": "green",
+        "value": [0,255,0],
+        "immutable": true,
+        "type":"feature_reserved"},
+
+  "3": {"color": "black",
+        "value": [0,0,0],
+        "immutable": false,
+        "type":"blank"},
+
+  "4": {"color": "blue",
+        "value": [0,0,255],
+        "immutable": false,
+        "type":"class_reserved"},
+
+  "5": {"color": "grey",
+        "value": [90,90,120],
+        "immutable": false,
+        "type":"class_reserved"},
+
+  "6": {"color": "light-grey",
+        "value": [160,120,120],
+        "immutable": false,
+        "type":"class_reserved"},
+
+  "7": {"color": "light-blue",
+      "value": [120,120,255],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "8": {"color": "light-red",
+      "value": [255,120,120],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "9": {"color": "light-green",
+      "value": [120,222,120],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "10": {"color": "dark-grey",
+      "value": [30,30,30],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "11": {"color": "dark-blue",
+      "value": [30,30,90],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "12": {"color": "dark-red",
+      "value": [90,30,30],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "13": {"color": "dark-green",
+      "value": [30,90,30],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "14": {"color": "purple",
+      "value": [0,255,255],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "15": {"color": "light-purple",
+      "value": [120,255,255],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "16": {"color": "yellow",
+      "value": [255,255,0],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "17": {"color": "light-yellow",
+      "value": [255,255,120],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "18": {"color": "dark-yellow",
+      "value": [120,120,30],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "19": {"color": "dark-purple",
+      "value": [0,70,70],
+      "immutable": false,
+        "type":"class_reserved"},
+
+  "20": {"color": "orange",
+      "value": [255,120,0],
+      "immutable": false,
+        "type":"class_reserved"}
+}

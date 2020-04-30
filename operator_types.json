@@ -1,0 +1,10 @@
+{
+  "0": {"operator": "+"},
+  "1": {"operator": "-"},
+  "2": {"operator": "*"},
+  "3": {"operator": "+h%"},
+  "4": {"operator": "-w%"},
+  "5": {"operator": "+w%"},
+  "6": {"operator": "-h%"},
+  "7": {"operator": "+ 0*"}
+}
