@@ -41,8 +41,15 @@ class CellularModel():
     y_pred = model.predict(X_test,y_test)
 
     Expects:
-        N INT the population size used for selection
-        mutate_proba FLOAT the probability of mutating a child
+        N                   INT population size used for selection
+        mutate_proba        FLOAT probability of mutating a child
+        max_epochs          INT maximum generations during fit
+        auto_plot           BOOL display a visual cell state
+        min_depth           INT minimum search depth
+        max_depth           INT maximum search depth
+        quantize_size       TUPLE units of MaxMin feature interpolation
+        fitness_func        STR objective criteria for fitness function
+        silent              BOOL enable verbosity during fit
         
     '''
 
