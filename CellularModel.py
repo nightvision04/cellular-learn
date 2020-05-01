@@ -11,6 +11,7 @@ import math
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import pickle
+import json
 
 class CellularModel():
     '''
@@ -50,6 +51,7 @@ class CellularModel():
         quantize_size       TUPLE units of MaxMin feature interpolation
         fitness_func        STR objective criteria for fitness function
         silent              BOOL enable verbosity during fit
+        experimental_mode   BOOL turns on experimental mode
         
     '''
 
@@ -63,7 +65,8 @@ class CellularModel():
             max_depth=40,
             quantize_size='auto',
             fitness_func='accuracy',
-            silent=False):
+            silent=False,
+            experimental_mode=False):
 
         # Size of the world. E.g: 10x10
         self.size = (5,14)
@@ -85,6 +88,7 @@ class CellularModel():
         self.max_epochs = max_epochs
         self.json_data = JSONData()
         self.fitness_func = fitness_func
+        self.experimental_mode = experimental_mode
 
         assert isinstance(quantize_size,(tuple,str))
         if isinstance(quantize_size,tuple):
@@ -115,7 +119,8 @@ class CellularModel():
         assert isinstance(
             max_epochs, int), 'Expected max_epochs to be INT, got type: {}'.format(
             type(max_epochs))
-
+        assert isinstance(experimental_mode,bool),\
+            'Expected experimental_mode BOOL, got type,{}'.format(type(experimental_mode))
 
     def save(self,fp=''):
         '''
@@ -240,6 +245,38 @@ class CellularModel():
 
         return y_pred_array
 
+    def log_results(self,payload,fp='log.json'):
+        '''
+        Attempts to append epoch results to JSON file
+        '''
+
+        try:
+            # Open
+            f = open(fp,'r')
+        except (FileNotFoundError):
+            f = open(fp, 'w')
+            f.write(json.dumps([]))
+            f.close()
+            f = open(fp, 'r')
+        data = f.read()
+        f.close()
+
+        # Append
+        try:
+            json_data = json.loads(data)
+        except (json.decoder.JSONDecodeError):
+            json_data =[]
+
+        json_data.append(payload)
+        data = json.dumps(json_data)
+
+        # Write
+        f = open(fp,'w')
+        f.write(data)
+        f.close()
+
+        return self
+
     def fit(self,
             X=np.array([]),
             y=np.array([]),
@@ -305,26 +342,32 @@ class CellularModel():
             assert isinstance(self.generation_list, list)
             assert isinstance(self.generation_fitness,list)
 
+            # Set model
+            best_depth_index = np.argmax( \
+                [np.amax(self.param_scores[i]) for i in range(len(self.param_scores))])
+            assert isinstance(best_depth_index, (int, np.int64, np.int32)), \
+                'best_depth_index was type: {}'.format(type(best_depth_index))
+            self.selected_dna_depth = best_depth_index + 1 + self.max_depth
+
+            self.selected_model_fitness = np.amax(self.param_scores[best_depth_index])
+            assert isinstance(self.selected_model_fitness, float)
+
+            best_dna_index = np.argmax(self.param_scores[best_depth_index])
+            self.selected_model_dna = self.param_best_dna[best_depth_index][best_dna_index]
+            assert isinstance(self.selected_model_dna, np.ndarray)
+
+            self.isFit = True
+
+            if self.experimental_mode:
+                self.log_results({'depth':self.min_depth+i,
+                                  'fitness':self.generation_fitness[i],
+                                  'N':self.N,
+                                  'mutate_proba':self.mutate_proba})
+
             if i >= (self.max_depth-self.min_depth):
                 fitting = False
-                self.isFit = True
 
             i+=1
-
-        # Set model dna
-        best_depth_index = np.argmax(\
-            [np.amax(self.param_scores[i]) for i in range(self.max_depth-self.min_depth+1)])
-        assert isinstance(best_depth_index, (int,np.int64,np.int32)),\
-            'best_depth_index was type: {}'.format(type(best_depth_index))
-        self.selected_dna_depth = best_depth_index+1 + self.max_depth
-
-        self.selected_model_fitness = np.amax(self.param_scores[best_depth_index])
-        assert isinstance(self.selected_model_fitness,float)
-
-        best_dna_index = np.argmax(self.param_scores[best_depth_index])
-        self.selected_model_dna = self.param_best_dna[best_depth_index][best_dna_index]
-        assert isinstance(self.selected_model_dna,np.ndarray)
-
 
         return self
 
@@ -1036,10 +1079,31 @@ class TestGA(unittest.TestCase):
         with self.assertRaises(AssertionError):
             ProbSpace(X, y, splits=0)
 
+    def test_log_payload(self):
+
+        import os
+        # Correct values
+        X = np.array([
+            [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0],
+            [1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0],
+            [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0],
+            [0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1]
+        ])
+        y = [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3]
+        y = np.array(y).reshape(len(y), 1)
+        model = CellularModel()
+        model.log_results('test',fp='test.json')
+        f = open('test.json','r')
+        data = f.read()
+        f.close()
+        json_data = json.loads(data)
+        assert json_data == ['test'],\
+            'Json payload contained: {}'.format(json_data)
+        os.remove('test.json')
+
     def test_fit_predict_simple(self):
 
         # Correct values
-        from sklearn.datasets import load_wine
         X = np.array([
             [0, 1,0,0],[0, 1,0,0],[0, 1,0,0],
             [1, 0,0,0],[1, 0,0,0],[1, 0,0,0],
@@ -1059,11 +1123,11 @@ class TestGA(unittest.TestCase):
         model.fit(X, y,silent=True)
 
         try:
-            y_pred = model.predict(X,plot=True)
+            y_pred = model.predict(X[0:2],plot=True)
             from sklearn.metrics import f1_score
-            f1 = f1_score(y, y_pred, average='macro')
-        except:
-            raise AssertionError('To use .predict(plot=True), pip install pygame')
+            f1 = f1_score(y[0:2], y_pred, average='macro')
+        except Exception as a:
+            raise AssertionError('To use .predict(plot=True), pip install pygame\n\r',a)
         model.save('examples/example_model.pkl')
 
 
