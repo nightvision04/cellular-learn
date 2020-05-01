@@ -131,8 +131,8 @@ class TestCellularA(unittest.TestCase):
         self.assertEqual(6+6, 12)
 
     def test_run(self):
-        cellularA = CellularA(data=np.random.random_sample((30,30)).round().astype(int),
-                                dna=np.random.random_sample((10, 104)).round().astype(int),
+        cellularA = CellularA(data=[np.random.random_sample((30,30,3)).round().astype(int) for i in range(4)],
+                                dna=np.random.random_sample((10, 14)).round().astype(int),
                               json_data=Genotype.JSONData())
 
         res = cellularA.run()

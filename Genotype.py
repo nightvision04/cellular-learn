@@ -59,7 +59,7 @@ class Genotype:
         self.json_data = json_data
 
         # dna should be integer
-        assert dna.dtype == 'int64'
+        assert dna.dtype in ['int64','int32']
 
         # Set function dictionary
         self.func = {}
@@ -98,8 +98,8 @@ class Genotype:
                 # Determine which layers instruction focuses on
                 target_layer = self.func['target_layer'][i]
                 action_layer = self.func['action_layer'][i]
-                assert isinstance(target_layer, (int,np.int64))
-                assert isinstance(action_layer, (int,np.int64))
+                assert isinstance(target_layer, (int,np.int64,np.int32))
+                assert isinstance(action_layer, (int,np.int64,np.int32))
 
                 # Get truth table for target color
                 target_color = list(self.func['target_color'][i])
