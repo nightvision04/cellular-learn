@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import pickle
 import json
+from sklearn import decomposition
 
 class CellularModel():
     '''
@@ -52,6 +53,7 @@ class CellularModel():
         fitness_func        STR objective criteria for fitness function
         silent              BOOL enable verbosity during fit
         experimental_mode   BOOL turns on experimental mode
+        components          INT | FLOAT | BOOL Applies pca components if set
         
     '''
 
@@ -66,7 +68,8 @@ class CellularModel():
             quantize_size='auto',
             fitness_func='accuracy',
             silent=False,
-            experimental_mode=False):
+            experimental_mode=False,
+            components=False):
 
         # Size of the world. E.g: 10x10
         self.size = (5,14)
@@ -89,6 +92,7 @@ class CellularModel():
         self.json_data = JSONData()
         self.fitness_func = fitness_func
         self.experimental_mode = experimental_mode
+        self.components = components
 
         assert isinstance(quantize_size,(tuple,str))
         if isinstance(quantize_size,tuple):
@@ -100,6 +104,8 @@ class CellularModel():
                     .format(quantize_size)
             # Set to default space size
             quantize_size = (15,15)
+        assert isinstance(components,(int,float,bool)),\
+            'Expected components to be INT, FLOAT, or BOOl got type: {}'.format(type(components))
 
         self.quantize_size = quantize_size
 
@@ -167,6 +173,14 @@ class CellularModel():
                 raise TypeError('y must be type INT')
             assert len(np.unique(y)) > 1, \
                 'There was a single class in y. Expected more than 1, ({})'.format(np.unique(y))
+
+        # Use self.components for PCA decomposition
+        if self.components:
+            if training:
+                self.pca = decomposition.PCA(self.components)
+                self.pca.fit(X)
+            X = self.pca.transform(X)
+
 
         # Use max min scaler to 90% of self.quantize_space
         if training:
@@ -704,12 +718,12 @@ class ProbSpace():
             # value was not seen in training data), set to
             # max value of y-axis self.quantize_size.
             if X[i] > (self.quantize_size[1] - 3):
-                d[0][xPos+3,2:int(self.quantize_size[1])] = (0, 255, 0)
+                d[0][xPos+3][int(self.quantize_size[1]-1)] = (0, 255, 0)
             # or min value
             elif X[i] < 0:
-                d[0][xPos+3,0:3] = (0, 255, 0)
+                d[0][xPos+3][2] = (0, 255, 0)
             else:
-                d[0][xPos+3,3:int(3+X[i])] = (0, 255, 0)
+                d[0][xPos+3][int(3+X[i]-1)] = (0, 255, 0)
 
         return d
 
@@ -943,7 +957,7 @@ class World():
 class TestGA(unittest.TestCase):
 
 
-    def test_preprocess(self):
+    def test_preprocess1(self):
 
         # Correct INTs
         X = np.array([[1,2,3,4],
@@ -962,8 +976,30 @@ class TestGA(unittest.TestCase):
                      [ 2],
                      [ 3],
                      [4]])
+
         assert (X == expected_X).all()
         assert (y == expected_y).all()
+
+    def test_PCA(self):
+
+        # Test PCA
+        X = np.array([[1,2,3,4],
+                      [5,6,7,8],
+                      [9,10,11,12],
+                      [13,14,15,16]])
+        y = np.array([1,2,3,4]).reshape(4,1)
+        model = CellularModel(quantize_size=(15,15),
+                              components=0.95)
+        X,y = model.preprocess(X,y)
+
+        expected_X = np.array([[ 2.],
+                                 [ 5.],
+                                 [ 9.],
+                                 [13.]])
+
+        assert (X == expected_X).all()
+
+    def test_preprocess2(self):
 
         # Incorrect y shape
         X = np.random.randint(low=0, high=2, size=(4, 4))
@@ -972,6 +1008,7 @@ class TestGA(unittest.TestCase):
         with self.assertRaises(AssertionError):
             model.preprocess(X,y)
 
+    def test_preprocess3(self):
 
         # Empty data
         X = np.array([])
@@ -980,6 +1017,7 @@ class TestGA(unittest.TestCase):
         with self.assertRaises(AssertionError):
             model.preprocess(X, y)
 
+    def test_preprocess4(self):
 
         # Empty data
         X = np.random.randint(low=0, high=2, size=(4, 4))
@@ -988,6 +1026,7 @@ class TestGA(unittest.TestCase):
         with self.assertRaises(AssertionError):
             model.preprocess(X, y)
 
+    def test_preprocess5(self):
 
         # Wrong datatype
         X = np.random.randint(low=0, high=2, size=(4, 4)).astype(bool)
@@ -996,12 +1035,15 @@ class TestGA(unittest.TestCase):
         with self.assertRaises(TypeError):
             model.preprocess(X, y)
 
+    def test_preprocess5(self):
+
         # Wrong quantizesize
         X = np.random.randint(low=0, high=2, size=(4, 4))
         y = np.array([1,0,1,0]).reshape(4,1)
         with self.assertRaises(AssertionError):
             model = CellularModel(quantize_size=(0,2))
 
+    def test_preprocess6(self):
 
         # applying sclaer before it is fit
         X = np.random.randint(low=0, high=2, size=(4, 4))
@@ -1010,6 +1052,7 @@ class TestGA(unittest.TestCase):
         with self.assertRaises(AssertionError):
             model.preprocess(X,y,training=False)
 
+    def test_preprocess7(self):
 
         # y has a single class
         X = np.random.randint(low=0, high=2, size=(4, 4))
@@ -1106,6 +1149,30 @@ class TestGA(unittest.TestCase):
             'Json payload contained: {}'.format(json_data)
         os.remove('test.json')
 
+    def test_fit_predict_experimental_mode(self):
+
+        # Correct values
+        X = np.array([
+            [0, 1,0,0],[0, 1,0,0],[0, 1,0,0],
+            [1, 0,0,0],[1, 0,0,0],[1, 0,0,0],
+            [0,0,1,0],[0,0,1,0],[0,0,1,0],
+            [0, 0, 0, 1],[0, 0, 0, 1],[0, 0, 0, 1]
+        ])
+        y = [0,0,0,1,1,1,2,2,2,3,3,3]
+        y = np.array(y).reshape(len(y), 1)
+        model = CellularModel(N=2,
+                            mutate_proba=0.005,
+                            max_epochs=1,
+                            silent=True,
+                            min_depth=1,
+                            max_depth=1,
+                            experimental_mode=True)
+        assert (model.experimental_mode, True)
+        model.experimental_mode = False
+        model.fit(X, y,silent=True)
+        assert(model.isFit, True)
+
+
     def test_fit_predict_simple(self):
 
         # Correct values
@@ -1128,9 +1195,9 @@ class TestGA(unittest.TestCase):
         model.fit(X, y,silent=True)
 
         try:
-            y_pred = model.predict(X[0:2],plot=True)
+            y_pred = model.predict(X[0:1],plot=True)
             from sklearn.metrics import f1_score
-            f1 = f1_score(y[0:2], y_pred, average='macro')
+            f1 = f1_score(y[0:1], y_pred, average='macro')
         except Exception as a:
             raise AssertionError('To use .predict(plot=True), pip install pygame\n\r',a)
         model.save('examples/example_model.pkl')
