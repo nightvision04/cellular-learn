@@ -980,25 +980,6 @@ class TestGA(unittest.TestCase):
         assert (X == expected_X).all()
         assert (y == expected_y).all()
 
-    def test_PCA(self):
-
-        # Test PCA
-        X = np.array([[1,2,3,4],
-                      [5,6,7,8],
-                      [9,10,11,12],
-                      [13,14,15,16]])
-        y = np.array([1,2,3,4]).reshape(4,1)
-        model = CellularModel(quantize_size=(15,15),
-                              components=0.95)
-        X,y = model.preprocess(X,y)
-
-        expected_X = np.array([[ 2.],
-                                 [ 5.],
-                                 [ 9.],
-                                 [13.]])
-
-        assert (X == expected_X).all()
-
     def test_preprocess2(self):
 
         # Incorrect y shape
@@ -1061,7 +1042,7 @@ class TestGA(unittest.TestCase):
         with self.assertRaises(AssertionError):
             model.preprocess(X,y)
 
-    def test_probspace(self):
+    def test_probspace1(self):
         # Correct values - 2 bags
         X = np.random.randint(low=0, high=2, size=(16, 4))
         y = np.array([1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0]).reshape(16,1)
@@ -1071,6 +1052,8 @@ class TestGA(unittest.TestCase):
         bags = p.stratified_training_bags(X,y)
         assert len(bags) ==2
 
+    def test_probspace2(self):
+
         # Correct values - 6 bags
         X = np.random.randint(low=0, high=2, size=(16, 4))
         y = np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]).reshape(16, 1)
@@ -1079,6 +1062,7 @@ class TestGA(unittest.TestCase):
         bags = p.stratified_training_bags(X, y)
         assert len(bags) == 6
 
+    def test_probspace3(self):
         # Correct values - 1 bag
         X = np.random.randint(low=0, high=2, size=(16, 4))
         y = np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]).reshape(16, 1)
@@ -1087,6 +1071,7 @@ class TestGA(unittest.TestCase):
         bags = p.stratified_training_bags(X, y)
         assert len(bags) == 1
 
+    def test_probspace4(self):
         # Correct values - 1 bag training=False
         X = np.random.randint(low=0, high=4, size=(16, 4))
         y = np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]).reshape(16, 1)
@@ -1095,6 +1080,7 @@ class TestGA(unittest.TestCase):
         bags = p.stratified_training_bags(X)
         assert len(bags) == 1
 
+    def test_probspace5(self):
         # Correct values - bagging multiple samples while training=False
         X = np.random.randint(low=0, high=2, size=(16, 4))
         y = np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]).reshape(16, 1)
@@ -1102,6 +1088,7 @@ class TestGA(unittest.TestCase):
                       splits=0, training=False)
         bags = p.stratified_training_bags(X, y)
 
+    def test_probspace6(self):
         # Correct values, all samples instead of single
         X = np.random.randint(low=0, high=2, size=(4, 4))
         y = np.array([1,0,1,0]).reshape(4,1)
@@ -1109,23 +1096,45 @@ class TestGA(unittest.TestCase):
         with self.assertRaises(AssertionError):
             space = p.generate_space(X, y)
 
+    def test_probspace7(self):
         # Incorrect training param
         X = np.random.randint(low=0, high=2, size=(4, 4))
         y = np.array([1,0,1,0]).reshape(4,1)
         with self.assertRaises(AssertionError):
             ProbSpace(X, y, training=3,splits=2)
 
+    def test_probspace8(self):
         # Incorrect class_weight param
         X = np.random.randint(low=0, high=2, size=(4, 4))
         y = np.array([1, 0, 1, 0]).reshape(4, 1)
         with self.assertRaises(AssertionError):
             ProbSpace(X, y, class_weight='eggs',splits=2)
 
+    def test_probspace9(self):
         # Incorrect class_weight param
         X = np.random.randint(low=0, high=2, size=(4, 4))
         y = np.array([1, 0, 1, 0]).reshape(4, 1)
         with self.assertRaises(AssertionError):
             ProbSpace(X, y, splits=0)
+
+    def test_PCA(self):
+
+        # Test PCA
+        X = np.array([[1,2,3,4],
+                      [5,6,7,8],
+                      [9,10,11,12],
+                      [13,14,15,16]])
+        y = np.array([1,2,3,4]).reshape(4,1)
+        model = CellularModel(quantize_size=(15,15),
+                              components=0.95)
+        X,y = model.preprocess(X,y)
+
+        expected_X = np.array([[ 2.],
+                                 [ 5.],
+                                 [ 9.],
+                                 [13.]])
+
+        assert (X == expected_X).all()
 
     def test_log_payload(self):
 
@@ -1167,10 +1176,10 @@ class TestGA(unittest.TestCase):
                             min_depth=1,
                             max_depth=1,
                             experimental_mode=True)
-        assert (model.experimental_mode, True)
+        assert model.experimental_mode==True
         model.experimental_mode = False
         model.fit(X, y,silent=True)
-        assert(model.isFit, True)
+        assert model.isFit==True
 
 
     def test_fit_predict_simple(self):
