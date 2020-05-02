@@ -371,8 +371,8 @@ class CellularModel():
 
                 i+=1
 
-        except KeyboardInterrupt:
-            return self
+            except KeyboardInterrupt:
+                return self
 
         return self
 
