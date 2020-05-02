@@ -306,68 +306,73 @@ class CellularModel():
         i=0
         while fitting==True:
 
-            # Set parameters from param_grid
-            self.size = self.param_grid['size'][i]
-            # Reset the population
-            self.initialize()
+            try:
 
-            # Preprocess the data
-            X,y = self.preprocess(X,y)
+                # Set parameters from param_grid
+                self.size = self.param_grid['size'][i]
+                # Reset the population
+                self.initialize()
 
-            # Generate the sample spaces compatible with the CA algo
-            if self.max_epochs >= 10:
-                splits = 10
-            else:
-                splits = self.max_epochs
+                # Preprocess the data
+                X,y = self.preprocess(X,y)
 
-            # Multiply by 50
-            splits = splits *50
+                # Generate the sample spaces compatible with the CA algo
+                if self.max_epochs >= 10:
+                    splits = 10
+                else:
+                    splits = self.max_epochs
+
+                # Multiply by 50
+                splits = splits *50
 
 
-            p = ProbSpace(X, y, quantize_size=(15, 15),
-                          splits=splits, training=True)
-            self.bags = p.stratified_training_bags(X, y)
+                p = ProbSpace(X, y, quantize_size=(15, 15),
+                              splits=splits, training=True)
+                self.bags = p.stratified_training_bags(X, y)
 
-            if not self.silent:
-                print('Depth:',self.min_depth+i)
+                if not self.silent:
+                    print('Depth:',self.min_depth+i)
 
-            # Run - This should contain class stratified batches of 30
-            self.run()
+                # Run - This should contain class stratified batches of 30
+                self.run()
 
-            # Store the results
-            self.param_best_children_array[i] = self.generation_list
-            self.param_scores[i] = self.generation_fitness
-            self.param_best_dna[i] = [x.world for x in self.generation_list]
+                # Store the results
+                self.param_best_children_array[i] = self.generation_list
+                self.param_scores[i] = self.generation_fitness
+                self.param_best_dna[i] = [x.world for x in self.generation_list]
 
-            assert isinstance(self.generation_list, list)
-            assert isinstance(self.generation_fitness,list)
+                assert isinstance(self.generation_list, list)
+                assert isinstance(self.generation_fitness,list)
 
-            # Set model
-            best_depth_index = np.argmax( \
-                [np.amax(self.param_scores[i]) for i in range(len(self.param_scores))])
-            assert isinstance(best_depth_index, (int, np.int64, np.int32)), \
-                'best_depth_index was type: {}'.format(type(best_depth_index))
-            self.selected_dna_depth = best_depth_index + 1 + self.max_depth
+                # Set model
+                best_depth_index = np.argmax( \
+                    [np.amax(self.param_scores[i]) for i in range(len(self.param_scores))])
+                assert isinstance(best_depth_index, (int, np.int64, np.int32)), \
+                    'best_depth_index was type: {}'.format(type(best_depth_index))
+                self.selected_dna_depth = best_depth_index + 1 + self.max_depth
 
-            self.selected_model_fitness = np.amax(self.param_scores[best_depth_index])
-            assert isinstance(self.selected_model_fitness, float)
+                self.selected_model_fitness = np.amax(self.param_scores[best_depth_index])
+                assert isinstance(self.selected_model_fitness, float)
 
-            best_dna_index = np.argmax(self.param_scores[best_depth_index])
-            self.selected_model_dna = self.param_best_dna[best_depth_index][best_dna_index]
-            assert isinstance(self.selected_model_dna, np.ndarray)
+                best_dna_index = np.argmax(self.param_scores[best_depth_index])
+                self.selected_model_dna = self.param_best_dna[best_depth_index][best_dna_index]
+                assert isinstance(self.selected_model_dna, np.ndarray)
 
-            self.isFit = True
+                self.isFit = True
 
-            if self.experimental_mode:
-                self.log_results({'depth':self.min_depth+i,
-                                  'fitness':self.generation_fitness[i],
-                                  'N':self.N,
-                                  'mutate_proba':self.mutate_proba})
+                if self.experimental_mode:
+                    self.log_results({'depth':self.min_depth+i,
+                                      'fitness':self.generation_fitness[i],
+                                      'N':self.N,
+                                      'mutate_proba':self.mutate_proba})
 
-            if i >= (self.max_depth-self.min_depth):
-                fitting = False
+                if i >= (self.max_depth-self.min_depth):
+                    fitting = False
 
-            i+=1
+                i+=1
+
+        except KeyboardInterrupt:
+            return self
 
         return self
 
