@@ -5,7 +5,7 @@ from sklearn.metrics import f1_score
 import multiprocessing
 import numpy as np
 
-def log_trial(target_log='tests/log.json', dataset='iris'):
+def log_trial(target_log='tests/log2.json', dataset='iris'):
     '''
     Runs an instance on a sample dataset
 
@@ -36,7 +36,7 @@ def log_trial(target_log='tests/log.json', dataset='iris'):
                           max_epochs=45,
                           auto_plot=True,
                           experimental_mode=True,
-                          components=4)
+                          components=1)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test, plot=True)
     f1 = f1_score(y_test, y_pred, average='macro')
@@ -44,7 +44,7 @@ def log_trial(target_log='tests/log.json', dataset='iris'):
 
     return
 
-def start_trials(numTrials=11):
+def start_trials(numTrials=7):
     '''
     Starts a number of multiprocessed trials
 
